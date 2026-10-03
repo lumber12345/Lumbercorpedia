@@ -108,6 +108,23 @@ The browser never talks to `api.torn.com` directly. `server/index.mjs`:
 * serves the built SPA with long-lived caching on hashed assets and an SPA fallback,
 * binds `0.0.0.0` so it works behind a container or preview proxy.
 
+### When the host has no internet
+
+A sandbox, a locked-down container or a corporate network can block outbound HTTPS to `api.torn.com`. That is an
+environment problem, not a key problem — so the app says so instead of failing ambiguously:
+
+* **Startup check.** The server tests DNS → TCP → HTTPS on boot and logs a clear warning if Torn is unreachable.
+* **`GET /api/diagnostics`.** A staged connectivity report (which layer failed, and how long each took), also surfaced in
+  the app as a **connection check** panel on the My Torn data page.
+* **Classified errors.** Every bridge failure returns JSON with a `kind` (`blocked`, `dns`, `timeout`, `tls`, `upstream`,
+  `server`, `request`) plus a `hint`. The client never degrades to a bare status code, and an HTML error page from a
+  reverse proxy is recognised as a connectivity problem rather than misreported as a Torn rejection.
+* **Nothing is blocked by it.** All databases, the roadmap and every calculator work with numbers you type in, and the
+  profile page includes a manual-entry panel that writes into the same store the API import uses.
+
+The smoke test asserts each of those failure paths, including that no branch can regress to an unhelpful
+`Bridge error (502)`-style message.
+
 ---
 
 ## Project layout

@@ -12,7 +12,7 @@ import {
 } from '../../lib/gym';
 import { money, num, statShort } from '../../lib/format';
 import { useApp } from '../../lib/store';
-import { callTorn, type TornError } from '../../lib/tornApi';
+import { BridgeError, TORN_ERROR_HELP, TornApiError, callTorn } from '../../lib/tornApi';
 
 const STAT_LABELS: { key: StatKey; label: string }[] = [
   { key: 'strength', label: 'Strength' },
@@ -100,8 +100,8 @@ export default function GymCalculator() {
         key: apiKey,
       });
       const stats = data.battlestats ?? {};
-      const str = Number(stats.strength ?? stats.strength_modifier ?? 0);
-      if (!str) throw { code: 0, error: 'Torn did not return battle stats for this key.' } as TornError;
+      const str = Number(stats.strength ?? 0);
+      if (!str) throw new Error('Torn returned no battle stats for this key. Check that the key has battle stats access.');
       setTraining({
         stats: {
           strength: Number(stats.strength ?? 0),
@@ -112,12 +112,10 @@ export default function GymCalculator() {
       });
       setImportMessage({ tone: 'green', text: 'Battle stats imported from the Torn API.' });
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'object' && error && 'error' in error
-            ? String((error as TornError).error)
-            : 'Unknown error';
+      let message = 'Unknown error';
+      if (error instanceof TornApiError) message = TORN_ERROR_HELP[error.code] ?? error.message;
+      else if (error instanceof BridgeError) message = error.hint ? `${error.message} ${error.hint}` : error.message;
+      else if (error instanceof Error) message = error.message;
       setImportMessage({ tone: 'red', text: message });
     } finally {
       setImporting(false);

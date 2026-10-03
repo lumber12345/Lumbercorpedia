@@ -45,6 +45,7 @@ import {
   modelCadence,
 } from '../src/lib/energy';
 import { MERIT_LINES, lineCost, upgradeCost, planAllocation, FULL_LINE_COST } from '../src/data/merits';
+import { BridgeError, describeBridgeFailure } from '../src/lib/tornApi';
 
 const ROUTES: [string, () => JSX.Element][] = [
   ['/', Dashboard],
@@ -217,6 +218,44 @@ report(
   MERIT_LINES.every((line) => line.perUpgradeValue >= 0),
   `all ${MERIT_LINES.length} merit lines carry a per-upgrade value`,
 );
+
+// --- Bridge failure reporting ----------------------------------------------
+// A bare "Bridge error (502)" is what sent a user to the wrong conclusion, so
+// the classifier is tested directly.
+const json502 = describeBridgeFailure(
+  502,
+  'application/json; charset=utf-8',
+  JSON.stringify({ error: 'The connection to api.torn.com was reset.', kind: 'blocked', hint: 'Outbound traffic is blocked.' }),
+);
+report(json502 instanceof BridgeError, 'bridge failures produce a typed BridgeError');
+report(json502.kind === 'blocked', `a JSON body from the bridge keeps its kind (got ${json502.kind})`);
+report(json502.hint === 'Outbound traffic is blocked.', 'the hint from the bridge survives to the UI');
+report(
+  !json502.message.includes('502') || json502.message.includes('reset'),
+  'the bridge message is descriptive rather than a bare status code',
+);
+
+const proxyPage = describeBridgeFailure(502, 'text/html', '<html><body><h1>502 Bad Gateway</h1></body></html>');
+report(proxyPage.kind === 'network', 'an HTML error page is recognised as a proxy/host failure, not a Torn failure');
+report(
+  /proxy|host|browser/i.test(proxyPage.hint ?? ''),
+  'the proxy failure explains that something between the browser and the app answered',
+);
+report(!proxyPage.message.startsWith('Bridge error'), 'the message never degrades to a bare status code');
+
+const emptyBody = describeBridgeFailure(500, '', '');
+report(emptyBody.kind === 'server', 'an empty error body is reported as a server problem, not a proxy problem');
+report(/empty response/i.test(emptyBody.message), 'the empty-body message says what happened');
+
+const jsonNoErrorField = describeBridgeFailure(400, 'application/json', '{"detail":"nope"}');
+report(jsonNoErrorField.kind === 'http', 'a JSON error without an error field still resolves to a message');
+report(
+  !/^Bridge error \(\d+\)$/.test(jsonNoErrorField.message),
+  'no failure path degrades to a bare "Bridge error (502)"-style string',
+);
+
+const htmlFromApp = describeBridgeFailure(500, 'text/html; charset=utf-8', '<pre>Error</pre>');
+report(htmlFromApp.kind === 'network', 'even an app-served HTML error is flagged as a connectivity problem');
 
 console.log(`\n${failures === 0 ? 'PASS' : `FAIL (${failures})`}\n`);
 process.exit(failures === 0 ? 0 : 1);
