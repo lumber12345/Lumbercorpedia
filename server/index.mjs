@@ -226,6 +226,10 @@ export async function runDiagnostics({ force = false } = {}) {
 
 const app = express();
 app.disable('x-powered-by');
+// Render (and every other platform proxy) terminates TLS in front of this
+// process, so X-Forwarded-* is the only honest source for the client's address
+// and protocol. One hop, not `true` — trust only the platform's own proxy.
+app.set('trust proxy', 1);
 app.use(compression());
 app.use(express.json({ limit: '32kb' }));
 
@@ -364,7 +368,7 @@ if (fs.existsSync(DIST)) {
   );
 }
 
-app.listen(PORT, HOST, async () => {
+const server = app.listen(PORT, HOST, async () => {
   console.log(`[lumbercorpedia] listening on http://${HOST}:${PORT}`);
   const report = await runDiagnostics({ force: true });
   if (report.reachable) {
@@ -375,3 +379,17 @@ app.listen(PORT, HOST, async () => {
     console.warn('[lumbercorpedia]   Everything else (databases, calculators, roadmap) works offline.');
   }
 });
+
+/**
+ * Graceful shutdown. Render sends SIGTERM before every rolling deploy, restart
+ * and free-plan spin-down: stopping the listener lets in-flight requests finish
+ * instead of being cut off mid-response. The unref'd timer is a backstop for
+ * idle keep-alive sockets, well inside Render's 30-second grace period.
+ */
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.on(signal, () => {
+    console.log(`[lumbercorpedia] ${signal} received — closing the listener.`);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 10_000).unref();
+  });
+}

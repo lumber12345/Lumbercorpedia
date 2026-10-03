@@ -96,8 +96,55 @@ Other scripts:
 
 ```bash
 npm run typecheck  # tsc --noEmit, strict
-npm run smoke      # renders every route in jsdom and checks the maths (59 assertions)
+npm run smoke      # renders every route in jsdom and checks the maths (71 assertions)
 ```
+
+## Deploying to Render
+
+`render.yaml` is a [Render Blueprint](https://render.com/docs/blueprint-spec): one free web service on the Node runtime,
+no database, no persistent disk and no secrets. The Torn API key is typed into the browser and relayed one request at a
+time, so there is nothing to configure in the dashboard.
+
+1. Push the repo to GitHub.
+2. Render Dashboard → **New → Blueprint** → select the repo. Render reads `render.yaml` and creates the service.
+3. The first deploy runs `npm ci --include=dev && npm run build`, then `node server/index.mjs`. Render's health check
+   hits `/api/health`, which answers from memory and never waits on Torn.
+
+Creating the service by hand instead? Use the same values:
+
+| Setting | Value |
+| --- | --- |
+| Runtime | Node |
+| Build command | `npm ci --include=dev && npm run build` |
+| Start command | `node server/index.mjs` |
+| Health check path | `/api/health` |
+| Node version | 22 — via `NODE_VERSION` (or the `engines` field, which requires the Node 22 line) |
+
+### The three things that break this deploy
+
+* **`--include=dev` is load-bearing.** Render sets `NODE_ENV=production` during the *build* as well as at runtime, and
+  npm then skips `devDependencies` — which is where `vite` and `typescript` live. Plain `npm ci` gets as far as
+  `sh: vite: not found`. Verified locally: `NODE_ENV=production npm ci` leaves `node_modules/.bin/vite` missing, and
+  `NODE_ENV=production npm ci --include=dev` installs it and builds cleanly.
+* **Pin the Node major.** Render's default has moved 20 → 22 → 24 within a year. `render.yaml` sets `NODE_VERSION=22` and
+  `package.json` requires `>=22.22.2 <23`, so the build stays on the major the smoke test runs against (jsdom 30 needs
+  22.22.2 or newer, which is also what makes that range the honest floor rather than a round number).
+* **Start Node, not npm.** `npm start` puts a shell between Render and the app; a `SIGTERM` delivered to that shell does
+  not reliably reach the Node child, and the service then gets `SIGKILL`ed 30 seconds later instead of shutting down
+  cleanly. The Blueprint uses `node server/index.mjs`, so the graceful-shutdown handler is the process Render signals
+  (locals can still use `npm start`).
+
+### What the free plan means here
+
+Free web services spin down after 15 minutes without inbound traffic (roughly a minute to wake, with a loading page on
+the first request), draw on a 750 instance-hour monthly allowance, and have an ephemeral filesystem. That last one costs
+Lumbercorpedia nothing: the server writes no files, and saved progress lives in the browser's `localStorage`. The app is
+also a good citizen of the free plan's outbound-traffic threshold — the bridge relays one request per user action, and
+the boot-time connectivity probe is a single call.
+
+Live Torn data needs the host to reach `api.torn.com`; Render can. If a deploy ever lands somewhere that cannot,
+`/api/diagnostics` — and the connection check on the My Torn data page — names the layer that failed, and every offline
+feature keeps working.
 
 ### Why a server at all?
 
