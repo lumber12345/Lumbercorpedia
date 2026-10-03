@@ -1,0 +1,43 @@
+# Render Blueprint for Lumbercorpedia.
+#
+# One web service on the Node native runtime: Express serves the built SPA from
+# dist/ and relays Torn API requests. There is no database, no persistent disk
+# and no secret to configure — the player's Torn API key is supplied per request
+# from the browser and never stored server-side.
+#
+# Deploy: Render Dashboard → New → Blueprint → pick this repo.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: lumbercorpedia
+    runtime: node
+    plan: free
+    # Change to ohio / virginia / frankfurt / singapore to sit closer to you.
+    region: oregon
+    autoDeployTrigger: commit
+
+    # --include=dev is load-bearing. Render sets NODE_ENV=production for the
+    # build as well as at runtime, and npm then skips devDependencies — which is
+    # exactly where vite and typescript live. Plain `npm ci` fails here with
+    # `sh: vite: not found`. NODE_VERSION below keeps the build on the major
+    # this app is developed and smoke-tested against (Render's own default has
+    # moved 20 → 22 → 24 within a year).
+    buildCommand: npm ci --include=dev && npm run build
+    # `node server/index.mjs` rather than `npm start`: npm interposes a shell
+    # between Render and the app, and a SIGTERM aimed at that shell does not
+    # reliably reach the Node child (verified locally — the app kept serving).
+    # Started directly, Node is the process Render signals, so the graceful
+    # shutdown handler in server/index.mjs actually runs on every deploy.
+    startCommand: node server/index.mjs
+
+    # Answers instantly and never depends on api.torn.com, so a host with no
+    # outbound network can still pass its health check and stay up serving the
+    # databases, roadmap and calculators.
+    healthCheckPath: /api/health
+
+    # The server reads PORT from the environment (Render assigns 10000) and
+    # binds 0.0.0.0, so the proxy can reach it without any extra configuration.
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
