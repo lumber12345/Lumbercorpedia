@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Panel, Chip, Stat, SectionHeader, Callout } from '../components/ui';
+import { Bar, Panel, Chip, Stat, SectionHeader, Callout } from '../components/ui';
 import { ITEMS } from '../data/items';
 import { WEAPONS } from '../data/weapons';
 import { DRUGS } from '../data/drugs';
@@ -7,6 +7,9 @@ import { GYMS } from '../data/gyms';
 import { ALL_COURSES, DEGREES } from '../data/education';
 import { CRIMES } from '../data/crimes';
 import { useApp } from '../lib/store';
+import { PHASES, TASK_COUNT } from '../data/roadmap';
+import { MAX_ENERGY_BASE, MAX_ENERGY_DONATOR, energyPerDay, hoursToFull } from '../lib/energy';
+import { clock } from '../lib/format';
 import { GYM_FORMULA, gainPerTrain, statTotal, simulateSession } from '../lib/gym';
 import { statShort } from '../lib/format';
 import { useCountUp } from '../lib/hooks';
@@ -54,10 +57,27 @@ const TOOLS = [
 export default function Dashboard() {
   const training = useApp((state) => state.training);
   const apiKey = useApp((state) => state.apiKey);
+  const roadmapDone = useApp((state) => state.roadmapDone);
+  const prefs = useApp((state) => state.newPlayer);
   const gym = gymById(training.gymId) ?? GYMS[0];
 
   const totalItems = useCountUp(ITEMS.length);
   const totalWeapons = useCountUp(WEAPONS.length);
+
+  const maxEnergy = prefs.donator ? MAX_ENERGY_DONATOR : MAX_ENERGY_BASE;
+
+  /** First three unfinished roadmap tasks, in phase order. */
+  const nextTasks = (() => {
+    const done = new Set(roadmapDone);
+    const out: typeof PHASES[number]['tasks'] = [];
+    for (const phase of PHASES) {
+      for (const task of phase.tasks) {
+        if (!done.has(task.id) && out.length < 3) out.push(task);
+      }
+      if (out.length >= 3) break;
+    }
+    return out;
+  })();
 
   const total = statTotal(training.stats);
   const perTrain = gainPerTrain({
@@ -94,10 +114,13 @@ export default function Dashboard() {
               sequencing and director-grade profit analysis.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Link to="/items" className="btn btn-primary">
+              <Link to="/start" className="btn btn-primary">
+                New player? Start here
+              </Link>
+              <Link to="/items" className="btn">
                 Browse the item database
               </Link>
-              <Link to="/tools/gym" className="btn">
+              <Link to="/tools/gym" className="btn btn-ghost">
                 Open gym calculator
               </Link>
               <Link to="/profile" className="btn btn-ghost">
@@ -119,6 +142,67 @@ export default function Dashboard() {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
+          <Panel>
+            <SectionHeader
+              title="Your next steps"
+              subtitle="Pulled straight from the new player roadmap, in the order that matters."
+              right={
+                <Link to="/start" className="btn btn-ghost text-xs">
+                  Open roadmap →
+                </Link>
+              }
+            />
+            <div className="grid gap-4 p-4 lg:grid-cols-[1fr_260px]">
+              <ol className="space-y-3">
+                {nextTasks.length === 0 ? (
+                  <li className="text-sm text-emerald-300">
+                    Roadmap complete — from here it is compounding: gym ladder, jumps and stat shape.
+                  </li>
+                ) : (
+                  nextTasks.map((task, index) => (
+                    <li key={task.id} className="flex gap-3">
+                      <span className="mono mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500/15 text-[11px] font-semibold text-amber-300">
+                        {index + 1}
+                      </span>
+                      <span>
+                        <span className="block text-sm text-slate-100">{task.title}</span>
+                        <span className="block text-[11px] leading-relaxed text-slate-500">
+                          {task.numbers ?? task.why}
+                        </span>
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ol>
+              <div className="space-y-3">
+                <div className="rounded-lg border border-ink-700/70 bg-ink-900/40 p-3">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Roadmap progress</span>
+                    <span className="mono text-amber-300">
+                      {roadmapDone.length}/{TASK_COUNT}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <Bar value={roadmapDone.length} max={TASK_COUNT} tone="amber" />
+                  </div>
+                </div>
+                <div className="rounded-lg border border-ink-700/70 bg-ink-900/40 p-3 text-[11px] leading-relaxed">
+                  <div className="text-slate-400">Your energy bar</div>
+                  <div className="mono mt-0.5 text-base text-amber-300">
+                    {prefs.currentEnergy}/{maxEnergy}
+                  </div>
+                  <div className="mt-1 text-slate-500">
+                    Full in {clock(hoursToFull(prefs.currentEnergy, maxEnergy, prefs.donator) * 3600)} ·{' '}
+                    {energyPerDay(prefs.donator)}/day available
+                  </div>
+                  <Link to="/tools/energy" className="link mt-1.5 inline-block">
+                    Are you wasting it? →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </Panel>
+
           <Panel>
             <SectionHeader
               title="Your training snapshot"

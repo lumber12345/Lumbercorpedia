@@ -13,8 +13,11 @@ import { GYMS } from '../data/gyms';
 import { ALL_COURSES, DEGREES } from '../data/education';
 import { CRIMES } from '../data/crimes';
 import { COMPANY_SPECIALS } from '../data/companies';
+import { ALL_TASKS, COSTLY_MISTAKES, PHASES } from '../data/roadmap';
+import { MERIT_LINES } from '../data/merits';
 
 export type ResultKind =
+  | 'Guide'
   | 'Item'
   | 'Weapon'
   | 'Drug'
@@ -133,8 +136,46 @@ for (const company of COMPANY_SPECIALS) {
   });
 }
 
+for (const task of ALL_TASKS) {
+  const phase = PHASES.find((entry) => entry.tasks.some((t) => t.id === task.id));
+  entries.push({
+    id: `roadmap:${task.id}`,
+    label: task.title,
+    sub: `New player roadmap · ${phase?.name ?? ''} — ${task.numbers ?? task.why.slice(0, 80)}`,
+    kind: 'Guide',
+    route: '/start',
+    keywords: `new player beginner guide roadmap ${task.why} ${task.numbers ?? ''} ${phase?.name ?? ''}`,
+  });
+}
+
+for (const mistake of COSTLY_MISTAKES) {
+  entries.push({
+    id: `mistake:${mistake.title}`,
+    label: mistake.title,
+    sub: `Costly mistake · ${mistake.cost} — ${mistake.fix}`,
+    kind: 'Guide',
+    route: '/start',
+    keywords: `mistake avoid new player beginner ${mistake.detail}`,
+  });
+}
+
+for (const line of MERIT_LINES) {
+  entries.push({
+    id: `merit:${line.id}`,
+    label: `${line.name} (merit)`,
+    sub: `Merit line · ${line.perUpgrade} · max: ${line.atMax}`,
+    kind: 'Guide',
+    route: '/tools/merits',
+    keywords: `merit upgrade ${line.perUpgrade} ${line.atMax} ${line.goodFor}`,
+  });
+}
+
 // ------------------------------------------------------------------- tools
 const TOOLS: SearchEntry[] = [
+  ['start-here', 'New Player Roadmap', 'Phased checklist from day one to compounding stats', '/start'],
+  ['energy-planner', 'Energy Planner', 'Stop wasting regeneration — see when your bar caps', '/tools/energy'],
+  ['jump-planner', 'Jump Planner', 'Candy jump and happy jump sessions, modelled properly', '/tools/jumps'],
+  ['merit-planner', 'Merit Planner', 'Spend your first merits where they are worth the most', '/tools/merits'],
   ['gym-calculator', 'Gym Gains Calculator', 'Model a single training session with the real Torn formula', '/tools/gym'],
   ['stat-planner', 'Stat Projection', 'Project stats forward day by day and find your target date', '/tools/stats'],
   ['booster-planner', 'Booster Planner', 'Plan drug stacks, cooldowns and addiction', '/tools/boosters'],
@@ -161,6 +202,10 @@ const PAGES: SearchEntry[] = [
   ['/education', 'Education', 'Courses, prerequisites, costs and payoffs'],
   ['/crimes', 'Crimes 2.0', 'Categories, enhancers, nerve estimates and merits'],
   ['/companies', 'Companies', 'Verified specials and the profit model'],
+  ['/start', 'New Player Roadmap', 'The fastest route through Torn\u2019s early game'],
+  ['/tools/energy', 'Energy Planner', 'Regeneration, cadence and waste'],
+  ['/tools/jumps', 'Jump Planner', 'Happy and candy jump sessions'],
+  ['/tools/merits', 'Merit Planner', 'Where the first merits go'],
   ['/about', 'About & data sources', 'Where every number comes from'],
 ].map(([route, label, sub]) => ({
   id: `page:${route}`,
@@ -176,6 +221,7 @@ export const SEARCH_INDEX = entries;
 
 const KIND_WEIGHT: Record<ResultKind, number> = {
   Tool: 6,
+  Guide: 5,
   Page: 4,
   Item: 3,
   Weapon: 3,
@@ -247,6 +293,7 @@ export function search(query: string, limit = 12): SearchHit[] {
 /** Group hits by kind for the palette's section headers. */
 export function groupHits(hits: SearchHit[]): { kind: ResultKind; hits: SearchHit[] }[] {
   const order: ResultKind[] = [
+    'Guide',
     'Tool',
     'Page',
     'Item',

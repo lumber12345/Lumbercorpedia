@@ -15,6 +15,22 @@ Press <kbd>⌘</kbd><kbd>K</kbd> (or <kbd>/</kbd>) anywhere and search items, it
 degrees, crimes, company specials and tools from a single ranked index. Deep links carry filters into pages — search an
 item and land on its row.
 
+### New player roadmap
+
+A phased, tickable route through the early game, because that is where Torn punishes ignorance hardest:
+
+* **Phase 1 — Foundation:** the 5-hour energy rule, spending energy in the gym instead of the dump, a starter job,
+  a faction, and a property before a weapon.
+* **Phase 2 — Levels 1 → 15:** why level 15 (travel) is the biggest gate in the game, how many stats to train first,
+  attacking and *leaving*, Xanax cadence, the first education courses, and protecting your crime experience.
+* **Phase 3 — Money engine:** suitcase capacity, an airstrip, the Museum, rehab, and when to stop selling losses.
+* **Phase 4 — Compound:** gym laddering, candy jumps → happy jumps, gym-boosting education, and deciding your stat shape
+  before it locks you out of the specialist gyms.
+
+Every task is tagged **verified** (stated on Torn's wiki or FAQ) or **community play** (long-standing practice, not an
+official rule), so you always know which is which. Progress is saved in your browser, and the dashboard shows your next
+three steps pulled from whichever phase you are in.
+
 ### Databases
 
 | Section | What you get |
@@ -29,19 +45,30 @@ item and land on its row.
 
 ### Calculators
 
-Six tools that show their own formulas:
+Nine tools that show their own formulas:
 
-1. **Gym gains calculator** — models a session *train by train*, because every train burns happiness and happiness sets
+0. **Energy planner** — a full energy bar takes exactly 5 hours (100 ÷ 20/hour, or 150 ÷ 30/hour as a donator), and
+   anything regenerated past the cap is lost. This shows when your bar fills, how much of your daily regeneration your
+   login routine throws away (three logins a day ≈ 180 energy), and what a better cadence is worth in gym trains.
+0. **Jump planner** — happy jumps are how new players get a big stat session without years of training. Models the
+   routine (pool energy → stack happiness → double with Ecstasy → spend it all in one sitting before the quarter-hour
+   reset) and shows the gain difference against training at your base happiness.
+0. **Merit planner** — merit upgrades cost 1, 2, 3 … 10 merits inside each line, so a full line is 55 and the first
+   upgrades are worth ten times the last. Recommends an order using each line's real per-upgrade effect.
+4. **Gym gains calculator** — models a session *train by train*, because every train burns happiness and happiness sets
    the next train's value. Uses the published Torn gain formula with the real constants.
 2. **Stat projection** — compounds gains forward day by day and runs backwards to give you a target date.
 3. **Booster planner** — builds a drug stack, sums energy/nerve/happiness, tracks sequential cooldown windows and totals
    the addiction you are taking on.
 4. **Study planner** — dependency-orders your courses, applies the additive merit/WSU/principal reductions and reports a
    finish date with the working stats you bank on the way.
-5. **Travel profit** — counts buy price, sell price, fees, flight, hotel and other costs, then gives you net profit,
+7. **Travel profit** — counts buy price, sell price, fees, flight, hotel and other costs, then gives you net profit,
    ROI, profit per hour and the break-even load.
-6. **Company profit** — revenue → wages → operating costs → director cut → margin, plus the highest wage the company can
+8. **Company profit** — revenue → wages → operating costs → director cut → margin, plus the highest wage the company can
    afford before it stops making money.
+
+Nothing in the money tools guesses today's market: jump items and travel goods ask for the prices you actually see,
+because a published price is stale within a day.
 
 ### Bring your own data
 
@@ -69,7 +96,7 @@ Other scripts:
 
 ```bash
 npm run typecheck  # tsc --noEmit, strict
-npm run smoke      # renders every route in jsdom and checks the maths
+npm run smoke      # renders every route in jsdom and checks the maths (59 assertions)
 ```
 
 ### Why a server at all?
@@ -87,10 +114,12 @@ The browser never talks to `api.torn.com` directly. `server/index.mjs`:
 
 ```
 src/
-  data/        gyms, weapons, drugs, education, crimes, items, companies
-  lib/         gym maths, formatting, search index, API client, persisted store, hooks
+  data/        gyms, weapons, drugs, education, crimes, items, companies,
+               roadmap (new player phases), merits
+  lib/         gym maths, energy maths, formatting, search index, API client,
+               persisted store, hooks
   components/  layout, command palette, data table, UI primitives
-  pages/       databases, tools, profile, about
+  pages/       new player roadmap, databases, tools, profile, about
 server/        Express app: static hosting + hardened Torn API bridge
 tools/         jsdom render smoke test
 ```
@@ -105,6 +134,11 @@ A reference tool is only as good as its provenance, so the app enforces three ru
    is running on.
 3. **Blank beats wrong.** Where data genuinely is not available, the UI shows a dash and explains why. It does not fill
    the gap with a plausible-looking number.
+
+The smoke test holds this policy to account: it asserts the published regeneration rates, the 5-hour bar, the merit
+cost curve (1+2+…+10 = 55), and that low happiness must end a training session before the energy runs out. It also caught
+an error in this project's own copy — "three logins a day is fine" — which the maths disproves, since an 8-hour gap caps
+the bar and costs about 180 energy daily.
 
 Known gaps are listed on the **About & sources** page inside the app, including the fact that Torn's post-2022
 decreasing-rate gym curve above ~50m per stat cannot be reproduced from the published constants — the calculators flag

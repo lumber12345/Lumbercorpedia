@@ -31,6 +31,16 @@ export interface TornProfile {
   payload: unknown;
 }
 
+export interface NewPlayerPrefs {
+  /** Character level — travel, refills and merit purchases are gated by it. */
+  level: number;
+  donator: boolean;
+  /** Current energy, used for the "when is my bar full" timer. */
+  currentEnergy: number;
+  /** How many times a day the player realistically logs in. */
+  loginsPerDay: number;
+}
+
 interface AppState {
   apiKey: string;
   setApiKey: (key: string) => void;
@@ -57,6 +67,14 @@ interface AppState {
     studyHoursPerDay: number;
   };
   setPlanner: (patch: Partial<AppState['planner']>) => void;
+
+  /** Completed roadmap task ids — the new player checklist. */
+  roadmapDone: string[];
+  toggleRoadmapTask: (id: string) => void;
+  resetRoadmap: () => void;
+
+  newPlayer: NewPlayerPrefs;
+  setNewPlayer: (patch: Partial<NewPlayerPrefs>) => void;
 }
 
 const DEFAULT_TRAINING: TrainingPrefs = {
@@ -102,6 +120,18 @@ export const useApp = create<AppState>()(
 
       planner: { meritEducation: 0, wsu: false, principal: false, studyHoursPerDay: 24 },
       setPlanner: (patch) => set((state) => ({ planner: { ...state.planner, ...patch } })),
+
+      roadmapDone: [],
+      toggleRoadmapTask: (id) =>
+        set((state) => ({
+          roadmapDone: state.roadmapDone.includes(id)
+            ? state.roadmapDone.filter((task) => task !== id)
+            : [...state.roadmapDone, id],
+        })),
+      resetRoadmap: () => set({ roadmapDone: [] }),
+
+      newPlayer: { level: 1, donator: false, currentEnergy: 0, loginsPerDay: 3 },
+      setNewPlayer: (patch) => set((state) => ({ newPlayer: { ...state.newPlayer, ...patch } })),
     }),
     {
       name: 'lumbercorpedia-v1',
@@ -111,6 +141,8 @@ export const useApp = create<AppState>()(
         unlockedGyms: state.unlockedGyms,
         training: state.training,
         planner: state.planner,
+        roadmapDone: state.roadmapDone,
+        newPlayer: state.newPlayer,
       }),
     },
   ),

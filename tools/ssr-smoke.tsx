@@ -13,6 +13,7 @@ import { renderToString } from 'react-dom/server';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import Dashboard from '../src/pages/Dashboard';
+import StartHere from '../src/pages/StartHere';
 import ItemsPage from '../src/pages/ItemsPage';
 import WeaponsPage from '../src/pages/WeaponsPage';
 import DrugsPage from '../src/pages/DrugsPage';
@@ -27,14 +28,27 @@ import BoosterPlanner from '../src/pages/tools/BoosterPlanner';
 import EducationPlanner from '../src/pages/tools/EducationPlanner';
 import TravelProfit from '../src/pages/tools/TravelProfit';
 import CompanyProfit from '../src/pages/tools/CompanyProfit';
+import EnergyPlanner from '../src/pages/tools/EnergyPlanner';
+import JumpPlanner from '../src/pages/tools/JumpPlanner';
+import MeritPlanner from '../src/pages/tools/MeritPlanner';
 import ProfilePage from '../src/pages/ProfilePage';
 import AboutPage from '../src/pages/AboutPage';
 import CommandPalette from '../src/components/CommandPalette';
 import { SEARCH_INDEX, search } from '../src/lib/search';
 import { gainPerTrain, happyLossPerTrain, modelConfidence, simulateSession } from '../src/lib/gym';
+import {
+  MAX_ENERGY_BASE,
+  MAX_ENERGY_DONATOR,
+  energyPerDay,
+  energyPerHour,
+  hoursToFull,
+  modelCadence,
+} from '../src/lib/energy';
+import { MERIT_LINES, lineCost, upgradeCost, planAllocation, FULL_LINE_COST } from '../src/data/merits';
 
 const ROUTES: [string, () => JSX.Element][] = [
   ['/', Dashboard],
+  ['/start', StartHere],
   ['/items', ItemsPage],
   ['/weapons', WeaponsPage],
   ['/drugs', DrugsPage],
@@ -49,13 +63,17 @@ const ROUTES: [string, () => JSX.Element][] = [
   ['/tools/education', EducationPlanner],
   ['/tools/travel', TravelProfit],
   ['/tools/company', CompanyProfit],
+  ['/tools/energy', EnergyPlanner],
+  ['/tools/jumps', JumpPlanner],
+  ['/tools/merits', MeritPlanner],
   ['/profile', ProfilePage],
   ['/about', AboutPage],
 ];
 
 /** Substrings that must appear in the rendered markup of each route. */
 const EXPECT: Record<string, string[]> = {
-  '/': ['Lumbercorpedia', 'Gym gains calculator', 'Your training snapshot'],
+  '/': ['Lumbercorpedia', 'Gym gains calculator', 'Your next steps'],
+  '/start': ['Start here', 'The mistakes that cost the most', 'Do these three next'],
   '/items': ['Item catalogue', 'Item', 'ID'],
   '/weapons': ['Weapon comparison', 'Loadout score', 'Jackhammer'],
   '/drugs': ['Drugs', 'Xanax', 'Addiction'],
@@ -70,6 +88,9 @@ const EXPECT: Record<string, string[]> = {
   '/tools/education': ['Education planner', 'Study queue'],
   '/tools/travel': ['Travel profit', 'Break-even load'],
   '/tools/company': ['Company profit', 'Wage headroom'],
+  '/tools/energy': ['Energy planner', 'Are you wasting regeneration?'],
+  '/tools/jumps': ['Jump planner', 'With the jump vs without'],
+  '/tools/merits': ['Merit planner', 'Recommended order'],
   '/profile': ['My Torn data', 'API key'],
   '/about': ['Lumbercorpedia', 'Dataset provenance'],
 };
@@ -141,6 +162,61 @@ report(Math.abs(happyLossPerTrain(10) - 5) < 1e-9, 'happiness loss is modelled a
 report(modelConfidence(4 * 10_000_000).level === 'high', 'model confidence is high below the old stat cap');
 report(modelConfidence(4 * 100_000_000).level === 'fair', 'model confidence drops above the old stat cap');
 report(modelConfidence(4 * 5_000_000_000).level === 'low', 'model confidence is low at end-game totals');
+
+// --- Regeneration maths (new player tools) ---------------------------------
+
+report(energyPerHour(false) === 20, `standard regen is 20 energy/hour (got ${energyPerHour(false)})`);
+report(energyPerHour(true) === 30, `donator regen is 30 energy/hour (got ${energyPerHour(true)})`);
+report(energyPerDay(false) === 480, `standard players get 480 energy/day (got ${energyPerDay(false)})`);
+report(energyPerDay(true) === 720, `donators get 720 energy/day (got ${energyPerDay(true)})`);
+report(
+  hoursToFull(0, MAX_ENERGY_BASE, false) === 5 && hoursToFull(0, MAX_ENERGY_DONATOR, true) === 5,
+  'a full bar takes exactly 5 hours either way — the number the roadmap is built on',
+);
+report(hoursToFull(60, MAX_ENERGY_BASE, false) === 2, 'half a bar takes half the time');
+
+const five = modelCadence(5, MAX_ENERGY_BASE, false);
+const four = modelCadence(4, MAX_ENERGY_BASE, false);
+const three = modelCadence(3, MAX_ENERGY_BASE, false);
+report(five.wasted === 0, 'five logins a day (every 4.8h) collects 100% of regeneration');
+report(four.wasted > 0, `four logins a day still wastes energy (${four.wasted}/day)`);
+report(
+  Math.round(three.wasted) === 180,
+  `three logins a day wastes ~180 energy/day — an 8-hour gap caps the bar (got ${Math.round(three.wasted)})`,
+);
+report(
+  three.wasted > four.wasted && four.wasted > five.wasted,
+  'waste falls monotonically as logins get closer together',
+);
+report(
+  modelCadence(1, MAX_ENERGY_BASE, false).collected === MAX_ENERGY_BASE,
+  'one login a day collects exactly one bar',
+);
+report(
+  modelCadence(2, MAX_ENERGY_DONATOR, true).collected === 2 * MAX_ENERGY_DONATOR,
+  'donators collect two full 150 bars from two logins',
+);
+
+// --- Merit cost curve ------------------------------------------------------
+report(upgradeCost(1) === 1 && upgradeCost(10) === 10, 'merit upgrades cost 1 … 10 merits');
+report(lineCost(10) === 55 && FULL_LINE_COST === 55, 'a full 10/10 merit line costs 55 merits');
+report(lineCost(0) === 0 && lineCost(1) === 1 && lineCost(2) === 3, 'line costs follow the triangular number series');
+const tenMerits = planAllocation(10, 'training');
+const spentTen = tenMerits.reduce((sum, entry) => sum + entry.cost, 0);
+report(spentTen <= 10 && spentTen >= 9, `a 10-merit plan spends 9 or 10 merits (spent ${spentTen})`);
+report(
+  !tenMerits.some((entry) => entry.levels > 4),
+  'the planner never over-invests a small budget into one deep line',
+);
+const bigPlan = planAllocation(200, 'training');
+report(
+  bigPlan.reduce((sum, entry) => sum + entry.cost, 0) <= 200,
+  'a large plan never exceeds its budget',
+);
+report(
+  MERIT_LINES.every((line) => line.perUpgradeValue >= 0),
+  `all ${MERIT_LINES.length} merit lines carry a per-upgrade value`,
+);
 
 console.log(`\n${failures === 0 ? 'PASS' : `FAIL (${failures})`}\n`);
 process.exit(failures === 0 ? 0 : 1);

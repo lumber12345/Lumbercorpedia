@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const StartHere = lazy(() => import('./pages/StartHere'));
 const ItemsPage = lazy(() => import('./pages/ItemsPage'));
 const WeaponsPage = lazy(() => import('./pages/WeaponsPage'));
 const DrugsPage = lazy(() => import('./pages/DrugsPage'));
@@ -17,6 +18,9 @@ const BoosterPlanner = lazy(() => import('./pages/tools/BoosterPlanner'));
 const EducationPlanner = lazy(() => import('./pages/tools/EducationPlanner'));
 const TravelProfit = lazy(() => import('./pages/tools/TravelProfit'));
 const CompanyProfit = lazy(() => import('./pages/tools/CompanyProfit'));
+const EnergyPlanner = lazy(() => import('./pages/tools/EnergyPlanner'));
+const JumpPlanner = lazy(() => import('./pages/tools/JumpPlanner'));
+const MeritPlanner = lazy(() => import('./pages/tools/MeritPlanner'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 
@@ -38,6 +42,14 @@ export default function App() {
           element={
             <Suspense fallback={<Loading />}>
               <Dashboard />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/start"
+          element={
+            <Suspense fallback={<Loading />}>
+              <StartHere />
             </Suspense>
           }
         />
@@ -150,6 +162,30 @@ export default function App() {
           element={
             <Suspense fallback={<Loading />}>
               <CompanyProfit />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tools/energy"
+          element={
+            <Suspense fallback={<Loading />}>
+              <EnergyPlanner />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tools/jumps"
+          element={
+            <Suspense fallback={<Loading />}>
+              <JumpPlanner />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tools/merits"
+          element={
+            <Suspense fallback={<Loading />}>
+              <MeritPlanner />
             </Suspense>
           }
         />

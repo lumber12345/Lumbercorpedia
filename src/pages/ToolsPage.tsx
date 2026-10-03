@@ -5,6 +5,38 @@ import { statShort } from '../lib/format';
 
 const TOOLS = [
   {
+    to: '/start',
+    name: 'New player roadmap',
+    tag: 'Start here',
+    what: 'The order of operations for your first weeks.',
+    why: 'A phased checklist — foundation, unlocking travel at level 15, building the money engine, then compounding stats — with every task tagged verified or community play.',
+    inputs: 'Level · donator status · login cadence',
+  },
+  {
+    to: '/tools/energy',
+    name: 'Energy planner',
+    tag: 'Start here',
+    what: 'Stop throwing regeneration away.',
+    why: 'Energy regenerates into a cap and anything past it is lost. This shows when your bar fills, what your login routine costs you, and what a better cadence is worth in gym trains.',
+    inputs: 'Current energy · logins per day · donator',
+  },
+  {
+    to: '/tools/jumps',
+    name: 'Jump planner',
+    tag: 'Stats',
+    what: 'Candy jumps and happy jumps, modelled.',
+    why: 'Stacks happiness above your maximum, doubles it with Ecstasy, then trains a thousand energy in one sitting — with the gain difference shown using the real gym formula.',
+    inputs: 'Base happy · happy items · energy pool',
+  },
+  {
+    to: '/tools/merits',
+    name: 'Merit planner',
+    tag: 'Start here',
+    what: 'Where your first merits should go.',
+    why: 'Merit upgrades cost 1, 2, 3 … 10 merits inside each line, so the first ones are worth ten times the last. Shows the real cost curve and recommends an order.',
+    inputs: 'Merits available · what you are optimising for',
+  },
+  {
     to: '/tools/gym',
     name: 'Gym gains calculator',
     tag: 'Training',
@@ -64,7 +96,7 @@ export default function ToolsPage() {
       <PageHeader
         eyebrow="Tools"
         title="The toolkit"
-        description="Six calculators built on published mechanics and transparent maths. Every one shows its formula, so you can argue with the answer instead of trusting it."
+        description="Nine tools built on published mechanics and transparent maths. Every one shows its formula, so you can argue with the answer instead of trusting it. New to Torn? Start with the roadmap, then the energy planner."
         right={
           <>
             <Chip tone="amber">Stat total {statShort(total)}</Chip>
@@ -72,6 +104,16 @@ export default function ToolsPage() {
           </>
         }
       />
+
+      <Callout tone="amber" title="Brand new to Torn?">
+        The single biggest early-game win is not a calculator — it is spending every point of energy before your bar caps.
+        Work through the{' '}
+        <Link to="/start" className="link">
+          new player roadmap
+        </Link>{' '}
+        first, then use the rest of these tools to tune it.
+      </Callout>
+      <div className="mt-4" />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {TOOLS.map((tool) => (

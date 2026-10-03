@@ -42,9 +42,15 @@ interface NavItem {
 
 const NAV: { title: string; items: NavItem[] }[] = [
   {
-    title: 'Database',
+    title: 'Start here',
     items: [
       { to: '/', label: 'Dashboard', icon: ICONS.home, end: true },
+      { to: '/start', label: 'New player roadmap', icon: ICONS.bolt },
+    ],
+  },
+  {
+    title: 'Database',
+    items: [
       { to: '/items', label: 'Items', icon: ICONS.box },
       { to: '/weapons', label: 'Weapons', icon: ICONS.gun },
       { to: '/drugs', label: 'Drugs & Boosters', icon: ICONS.pill },
@@ -58,6 +64,9 @@ const NAV: { title: string; items: NavItem[] }[] = [
     title: 'Tools',
     items: [
       { to: '/tools', label: 'Toolkit', icon: ICONS.calc, end: true },
+      { to: '/tools/energy', label: 'Energy planner', icon: ICONS.bolt },
+      { to: '/tools/jumps', label: 'Jump planner', icon: ICONS.pill },
+      { to: '/tools/merits', label: 'Merit planner', icon: ICONS.info },
       { to: '/tools/gym', label: 'Gym gains', icon: ICONS.dumbbell },
       { to: '/tools/stats', label: 'Stat projection', icon: ICONS.bolt },
       { to: '/tools/boosters', label: 'Booster plan', icon: ICONS.pill },

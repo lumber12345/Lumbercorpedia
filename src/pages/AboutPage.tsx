@@ -44,6 +44,20 @@ const SOURCES = [
     verified: '3 October 2026',
   },
   {
+    dataset: 'New player roadmap',
+    detail:
+      'Phase checklist, costly-mistake list and daily routine. Every task is tagged verified (Torn wiki / FAQ) or community play, so you know which is a rule and which is conventional wisdom.',
+    source: 'torn wiki — FAQ, Merit, Gym, Education, Travel + community guides',
+    verified: '3 October 2026',
+  },
+  {
+    dataset: 'Regeneration & merits',
+    detail:
+      'Energy and happiness regeneration rates, the energy cap, and the full merit upgrade list with the incremental cost curve (1, 2, 3 … 10 merits per line).',
+    source: 'torn wiki — FAQ, Merit',
+    verified: '3 October 2026',
+  },
+  {
     dataset: 'Companies',
     detail: 'Verified company specials only. No star-rating guesses, no invented per-star multipliers.',
     source: 'torn wiki — Education, Drug, Company pages',
@@ -63,7 +77,7 @@ export default function AboutPage() {
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Datasets" value={SOURCES.length} hint="each with a named source" />
-        <Stat label="Calculators" value={6} hint="formulas shown in the UI" tone="amber" />
+        <Stat label="Calculators" value={9} hint="formulas shown in the UI" tone="amber" />
         <Stat label="Torn API" value="v1 + v2 ready" hint="read-only, key stays local" />
         <Stat label="Data verified" value="Oct 2026" hint="against Torn's public wiki" />
       </div>
@@ -144,6 +158,7 @@ export default function AboutPage() {
               <li>• Traders who need an item ID in two seconds.</li>
               <li>• Directors and faction leaders modelling real numbers.</li>
               <li>• Anyone who has ever ctrl-F'd the wiki and given up.</li>
+              <li>• Brand new players who need an order of operations rather than a wall of text.</li>
             </ul>
           </Panel>
 
@@ -176,6 +191,10 @@ export default function AboutPage() {
               <li>
                 • Torn's post-2022 decreasing-rate gym curve above ~50m per stat — the published constants overstate
                 gains there, and the app says so on the calculator pages instead of guessing the curve.
+              </li>
+              <li>
+                • Live market prices for jump items and travel goods. The jump and travel planners ask you to enter the
+                prices you actually see rather than publishing figures that go stale within a day.
               </li>
             </ul>
             <SourceNote>
