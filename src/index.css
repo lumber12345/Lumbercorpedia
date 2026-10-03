@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink-950 text-slate-200 antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 15% -10%, rgba(249, 138, 18, 0.07), transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, rgba(59, 130, 246, 0.05), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-amber-500/30 text-white;
+  }
+
+  /* Slim scrollbars so dense tables don't fight the layout. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #323c48 transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-ink-600;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-500;
+    background-clip: content-box;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-xl border border-ink-700/80 bg-ink-850/80 shadow-panel backdrop-blur-sm;
+  }
+
+  .panel-hover {
+    @apply transition-colors duration-150 hover:border-ink-600 hover:bg-ink-800/80;
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-lg border border-ink-600 bg-ink-800 px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-ink-500 hover:bg-ink-750 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply border-amber-600/60 bg-amber-600/90 text-ink-950 hover:border-amber-500 hover:bg-amber-500;
+  }
+
+  .btn-ghost {
+    @apply border-transparent bg-transparent text-slate-300 hover:border-ink-600 hover:bg-ink-800;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ink-600 bg-ink-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/70 focus:outline-none focus:ring-2 focus:ring-amber-500/20;
+  }
+
+  .label {
+    @apply mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-4;
+  }
+
+  .th {
+    @apply whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400;
+  }
+
+  .td {
+    @apply px-3 py-2 text-sm text-slate-200;
+  }
+
+  .row-hover {
+    @apply transition-colors hover:bg-ink-800/60;
+  }
+
+  .link {
+    @apply text-amber-400 underline-offset-2 hover:text-amber-300 hover:underline;
+  }
+
+  .mono {
+    @apply font-mono tabular-nums;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
